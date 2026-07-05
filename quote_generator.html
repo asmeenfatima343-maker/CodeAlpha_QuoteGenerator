@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quote Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F3EC;
+    --line:#DBD8CC;
+    --ink:#26281F;
+    --ink-soft:#6C6D5F;
+    --sage:#4E6B52;
+    --sage-dark:#3A503D;
+    --sage-light:#E4ECE2;
+    --amber:#B8842E;
+    --card-bg:#FFFEFA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .app{
+    width:100%;
+    max-width:620px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--sage-dark);
+    background:var(--sage-light);
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:4px;
+    margin-bottom:16px;
+    letter-spacing:0.02em;
+  }
+  .quote-card{
+    position:relative;
+    background:var(--card-bg);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:52px 44px 40px;
+    box-shadow:0 2px 0 rgba(38,40,31,0.04), 0 10px 24px rgba(38,40,31,0.05);
+    min-height:220px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .quote-card::before{
+    content:"\201C";
+    position:absolute;
+    top:8px;
+    left:28px;
+    font-family:'Lora', serif;
+    font-size:80px;
+    color:var(--sage-light);
+    line-height:1;
+  }
+  .quote-text{
+    font-family:'Lora', serif;
+    font-size:24px;
+    line-height:1.5;
+    color:var(--ink);
+    margin:0 0 20px;
+    position:relative;
+    z-index:1;
+  }
+  .quote-author{
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    font-weight:600;
+    color:var(--sage-dark);
+    margin:0 0 4px;
+  }
+  .quote-category{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink-soft);
+  }
+  .controls{
+    display:flex;
+    gap:10px;
+    margin-top:22px;
+  }
+  button{font-family:'Inter', sans-serif; cursor:pointer;}
+  .btn{
+    border:1px solid var(--line);
+    background:var(--card-bg);
+    color:var(--ink);
+    font-size:14px;
+    font-weight:500;
+    padding:11px 18px;
+    border-radius:8px;
+    transition:background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
+  }
+  .btn:hover{background:#EFEDE3; border-color:#C9C5B4;}
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{
+    background:var(--sage);
+    border-color:var(--sage);
+    color:#F4FBF3;
+    flex:1;
+  }
+  .btn-primary:hover{background:var(--sage-dark); border-color:var(--sage-dark);}
+  .btn-icon{
+    width:44px;
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+  }
+  .toast{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--sage-dark);
+    margin-top:10px;
+    height:16px;
+    opacity:0;
+    transition:opacity 0.2s ease;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <span class="eyebrow" id="counter">Quote 1</span>
+  <div class="quote-card">
+    <p class="quote-text" id="quoteText">Loading...</p>
+    <p class="quote-author" id="quoteAuthor"></p>
+    <p class="quote-category" id="quoteCategory"></p>
+  </div>
+  <div class="controls">
+    <button class="btn btn-primary" id="newQuoteBtn">New quote</button>
+    <button class="btn btn-icon" id="copyBtn" title="Copy quote">⧉</button>
+  </div>
+  <p class="toast" id="toast">Copied to clipboard</p>
+</div>
+
+<script>
+/*
+  Uses a local, bundled quote library instead of a third-party API.
+  Public quote APIs (quotable.io, etc.) are frequently unreliable or
+  discontinued, which would break the app for the user with no warning.
+  This keeps the app fully offline-capable and demo-safe.
+*/
+const quotes = [
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", category: "work" },
+  { text: "Life is what happens when you're busy making other plans.", author: "John Lennon", category: "life" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt", category: "motivation" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius", category: "perseverance" },
+  { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill", category: "success" },
+  { text: "In the middle of difficulty lies opportunity.", author: "Albert Einstein", category: "opportunity" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt", category: "motivation" },
+  { text: "The only limit to our realization of tomorrow is our doubts of today.", author: "Franklin D. Roosevelt", category: "motivation" },
+  { text: "Do not watch the clock. Do what it does. Keep going.", author: "Sam Levenson", category: "perseverance" },
+  { text: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford", category: "mindset" },
+  { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney", category: "action" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson", category: "perseverance" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky", category: "action" },
+  { text: "Whatever you are, be a good one.", author: "Abraham Lincoln", category: "character" },
+  { text: "Act as if what you do makes a difference. It does.", author: "William James", category: "purpose" },
+  { text: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau", category: "success" },
+  { text: "The mind is everything. What you think you become.", author: "Buddha", category: "mindset" },
+  { text: "An unexamined life is not worth living.", author: "Socrates", category: "life" },
+  { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair", category: "courage" },
+  { text: "It is never too late to be what you might have been.", author: "George Eliot", category: "growth" },
+  { text: "Well done is better than well said.", author: "Benjamin Franklin", category: "work" },
+  { text: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", author: "Ralph Waldo Emerson", category: "mindset" },
+  { text: "Knowing yourself is the beginning of all wisdom.", author: "Aristotle", category: "wisdom" },
+  { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis", category: "growth" },
+  { text: "The best way to predict the future is to create it.", author: "Peter Drucker", category: "future" },
+  { text: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis", category: "perseverance" },
+  { text: "Turn your wounds into wisdom.", author: "Oprah Winfrey", category: "wisdom" },
+  { text: "Opportunities don't happen. You create them.", author: "Chris Grosser", category: "opportunity" },
+  { text: "Try not to become a person of success, but rather try to become a person of value.", author: "Albert Einstein", category: "character" },
+  { text: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson", category: "growth" },
+];
+
+let usedIndices = [];
+let currentIndex = -1;
+let quoteCount = 0;
+
+const quoteText = document.getElementById('quoteText');
+const quoteAuthor = document.getElementById('quoteAuthor');
+const quoteCategory = document.getElementById('quoteCategory');
+const counter = document.getElementById('counter');
+const toast = document.getElementById('toast');
+
+function pickRandomIndex(){
+  if(usedIndices.length >= quotes.length) usedIndices = [];
+  let idx;
+  do {
+    idx = Math.floor(Math.random() * quotes.length);
+  } while(usedIndices.includes(idx));
+  usedIndices.push(idx);
+  return idx;
+}
+
+function showQuote(){
+  currentIndex = pickRandomIndex();
+  const q = quotes[currentIndex];
+  quoteCount++;
+  quoteText.textContent = q.text;
+  quoteAuthor.textContent = "— " + q.author;
+  quoteCategory.textContent = q.category;
+  counter.textContent = "Quote " + quoteCount;
+  toast.classList.remove('show');
+}
+
+document.getElementById('newQuoteBtn').onclick = showQuote;
+
+document.getElementById('copyBtn').onclick = () => {
+  const q = quotes[currentIndex];
+  const fullText = `"${q.text}" — ${q.author}`;
+  navigator.clipboard.writeText(fullText).then(() => {
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1500);
+  });
+};
+
+showQuote();
+</script>
+
+</body>
+</html>
